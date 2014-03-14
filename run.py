@@ -95,14 +95,16 @@ def openAndAddTab(filename):
     saveTabs()
 
 def saveTabs():
-    global entry_widgets, path_to_opened
+    global entry_widgets, none_opened_label, path_to_opened
+    number_of_widgets = entry_widgets.count()
     with open(path_to_opened + ".tmp","wt") as f:
-        filenames = [entry_widgets.widget(i).filename.strip() for i in range(entry_widgets.count())]
+        filenames = [entry_widgets.widget(i).filename.strip() for i in range(number_of_widgets)]
         f.write('\n'.join(filenames))
     os.rename(path_to_opened + ".tmp",path_to_opened)
+    none_opened_label.setVisible(number_of_widgets == 0)
 
 def main():
-    global app, documents_directory, entry_widgets, main, path_to_opened
+    global app, documents_directory, entry_widgets, main, none_opened_label, path_to_opened
     app = QW.QApplication(sys.argv)
     app.setApplicationName("WeightTracker")
     app.setApplicationVersion("1.0")
@@ -110,8 +112,17 @@ def main():
     documents_directory = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DocumentsLocation)
 
     main = QW.QMainWindow()
+    main_panel = QW.QWidget()
+    main.setCentralWidget(main_panel)
+    main_panel_box = QW.QVBoxLayout()
+    main_panel.setLayout(main_panel_box)
+
     entry_widgets = QW.QTabWidget()
-    main.setCentralWidget(entry_widgets)
+    main_panel_box.addWidget(entry_widgets)
+
+    none_opened_label = QW.QLabel("Use the File menu to open a weight database.")
+    none_opened_label.setVisible(False)
+    main_panel_box.addWidget(none_opened_label)
 
     directory_of_opened = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DataLocation)
     if not path.exists(directory_of_opened):
@@ -136,6 +147,8 @@ def main():
         else:
             file_menu.addSeparator()
     menu_bar.addMenu(file_menu)
+
+    none_opened_label.setVisible(entry_widgets.count() == 0)
 
     main.show()
     app.exec_()
