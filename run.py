@@ -30,6 +30,7 @@ class EntryWidget(QW.QWidget):
         weight_panel_box.addStretch()
         save_and_clear_button = QW.QPushButton("Save and Clear")
         save_and_clear_button.setDefault(True)
+        save_and_clear_button.clicked.connect(self.saveAndClear)
         weight_panel_box.addWidget(save_and_clear_button)
 
         date_time_panel = QW.QWidget()
@@ -37,9 +38,30 @@ class EntryWidget(QW.QWidget):
         date_time_box = QW.QHBoxLayout()
         date_time_panel.setLayout(date_time_box)
         date_time_box.addWidget(QW.QLabel("Date and Time:"))
-        date_time_field = QW.QDateTimeEdit(QC.QDateTime.currentDateTime())
-        date_time_field.setFixedWidth(150)
-        date_time_box.addWidget(date_time_field)
+        self.date_time_field = QW.QDateTimeEdit(QC.QDateTime.currentDateTime())
+        self.date_time_field.setFixedWidth(150)
+        date_time_box.addWidget(self.date_time_field)
+
+    def saveAndClear(self):
+        timestamp = self.date_time_field.dateTime().toTime_t()
+        try:
+            weight = float(self.weight_field.text());
+        except ValueError:
+            QW.QMessageBox.information(self,"Error","The given weight value, \"" + self.weight_field.text() + "\", is not a valid number.")
+            return
+        cursor = self.database.cursor()
+        cursor.execute("select null from weights where timestamp = ?",(timestamp,))
+        if cursor.fetchone() is not None:
+            answer = QW.QMessageBox.question(self,"Warning","There is already a weight for the given date.  Would you like to overwrite it?")
+            if answer == QW.QMessageBox.No:
+                cursor.close()
+                return
+            cursor.execute("update weights set weight = ? where timestamp = ?",(weight,timestamp))
+        else:
+            cursor.execute("insert into weights (timestamp,weight) values (?,?)",(timestamp,weight))
+        self.database.commit()
+        cursor.close()
+        self.weight_field.setText("")
 
 def doNew():
     openAndAddTab(QW.QFileDialog.getSaveFileName(main,"New File",documents_directory,"Databases (*.db)")[0])
@@ -59,6 +81,8 @@ def doQuit():
 def openAndAddTab(filename):
     global database, entry_widgets
     database = sqlite3.connect(filename)
+    database.execute("create table if not exists weights (timestamp integer, weight real)")
+    database.commit()
     entry_widgets.addTab(EntryWidget(filename,database),path.splitext(path.split(filename)[1])[0])
 
 def main():
