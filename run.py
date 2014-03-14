@@ -74,16 +74,32 @@ def doClose():
     entry_panel = entry_widgets.currentWidget()
     entry_panel.database.close()
     entry_widgets.removeTab(entry_widgets.currentIndex())
+    saveTabs()
 
 def doQuit():
     app.exit()
 
 def openAndAddTab(filename):
-    global database, entry_widgets
+    filename = filename.strip()
+    if len(filename) == 0:
+        return
+    global database, entry_widgets, main
+    for i in range(entry_widgets.count()):
+        if(entry_widgets.widget(i).filename == filename):
+            QW.QMessageBox.information(main,"Error","The file \"" + filename + "\" has already been opened.")
+            return
     database = sqlite3.connect(filename)
     database.execute("create table if not exists weights (timestamp integer, weight real)")
     database.commit()
     entry_widgets.addTab(EntryWidget(filename,database),path.splitext(path.split(filename)[1])[0])
+    saveTabs()
+
+def saveTabs():
+    global entry_widgets, path_to_opened
+    with open(path_to_opened + ".tmp","wt") as f:
+        filenames = [entry_widgets.widget(i).filename.strip() for i in range(entry_widgets.count())]
+        f.write('\n'.join(filenames))
+    os.rename(path_to_opened + ".tmp",path_to_opened)
 
 def main():
     global app, documents_directory, entry_widgets, main, path_to_opened
@@ -103,10 +119,10 @@ def main():
     path_to_opened = path.join(directory_of_opened,"opened.lst")
 
     if path.exists(path_to_opened):
-        with open(opened_path,"rt") as f:
+        with open(path_to_opened,"rt") as f:
             filenames_to_open = list(f)
         for filename in filenames_to_open:
-            connectAndAddTab(filename)
+            openAndAddTab(filename)
 
     menu_bar = QW.QMenuBar(main)
 
