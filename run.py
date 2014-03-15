@@ -118,6 +118,12 @@ def openAndAddTab(filename):
     entry_widgets.addTab(EntryWidget(filename,database),path.splitext(path.split(filename)[1])[0])
     saveTabs()
 
+def doList():
+    pass
+
+def doGraph():
+    pass
+
 def saveTabs():
     global entry_widgets, none_opened_label, path_to_opened
     number_of_widgets = entry_widgets.count()
@@ -125,10 +131,17 @@ def saveTabs():
         filenames = [entry_widgets.widget(i).filename.strip() for i in range(number_of_widgets)]
         f.write('\n'.join(filenames))
     os.rename(path_to_opened + ".tmp",path_to_opened)
-    none_opened_label.setVisible(number_of_widgets == 0)
+    updateVisibility()
+
+def updateVisibility():
+    global entry_widgets, graph_view_button, list_view_button, none_opened_label
+    tab_present = entry_widgets.count() > 0
+    none_opened_label.setVisible(not tab_present)
+    list_view_button.setEnabled(tab_present)
+    graph_view_button.setEnabled(tab_present)
 
 def main():
-    global app, documents_directory, entry_widgets, main, none_opened_label, path_to_opened
+    global app, documents_directory, entry_widgets, graph_view_button, list_view_button, main, none_opened_label, path_to_opened
     app = QW.QApplication(sys.argv)
     app.setApplicationName("WeightTracker")
     app.setApplicationVersion("1.0")
@@ -147,6 +160,17 @@ def main():
     none_opened_label = QW.QLabel("Use the File menu to open a weight database.")
     none_opened_label.setVisible(False)
     main_panel_box.addWidget(none_opened_label)
+
+    view_buttons_panel = QW.QWidget()
+    main_panel_box.addWidget(view_buttons_panel)
+    view_buttons_panel_box = QW.QHBoxLayout()
+    view_buttons_panel.setLayout(view_buttons_panel_box)
+    list_view_button = QW.QPushButton("View/Edit as List")
+    list_view_button.clicked.connect(doList)
+    view_buttons_panel_box.addWidget(list_view_button)
+    graph_view_button = QW.QPushButton("View as Graph")
+    graph_view_button.clicked.connect(doGraph)
+    view_buttons_panel_box.addWidget(graph_view_button)
 
     directory_of_opened = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DataLocation)
     if not path.exists(directory_of_opened):
@@ -172,7 +196,7 @@ def main():
             file_menu.addSeparator()
     menu_bar.addMenu(file_menu)
 
-    none_opened_label.setVisible(entry_widgets.count() == 0)
+    updateVisibility()
 
     main.show()
     app.exec_()
