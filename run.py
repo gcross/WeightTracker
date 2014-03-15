@@ -53,6 +53,9 @@ class EntryWidget(QW.QWidget):
         self.date_time_field = QW.QDateTimeEdit(QC.QDateTime.currentDateTime())
         self.date_time_field.setFixedWidth(150)
         date_time_box.addWidget(self.date_time_field)
+        push_button = QW.QPushButton("Now")
+        push_button.clicked.connect(self.setToNow)
+        date_time_box.addWidget(push_button)
 
     def saveAndClear(self):
         timestamp = self.date_time_field.dateTime().toTime_t()
@@ -72,6 +75,9 @@ class EntryWidget(QW.QWidget):
             else:
                 cursor.execute("insert into weights (timestamp,weight) values (?,?)",(timestamp,weight))
         self.weight_field.setText("")
+
+    def setToNow(self):
+        self.date_time_field.setDateTime(QC.QDateTime.currentDateTime())
 
 class Cursor(sqlite3.Cursor):
     def __init__(self,*args, **keywords):
