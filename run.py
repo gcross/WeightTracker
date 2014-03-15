@@ -8,6 +8,18 @@ from PyQt5 import QtCore as QC
 from PyQt5 import QtGui as QG
 from PyQt5 import QtWidgets as QW
 
+def withinTransactionFor(database):
+    class Transaction(sqlite3.Cursor):
+        def __init__(self,*args,**keywords):
+            sqlite3.Cursor.__init__(self,*args,**keywords)
+        def __enter__(self):
+            pass
+        def __exit__(self,type,value,traceback):
+            self.close()
+            database.commit()
+            return type
+    return database.cursor(Transaction)
+
 class EntryWidget(QW.QWidget):
     def __init__(self,filename,database):
         self.filename = filename
@@ -49,19 +61,25 @@ class EntryWidget(QW.QWidget):
         except ValueError:
             QW.QMessageBox.information(self,"Error","The given weight value, \"" + self.weight_field.text() + "\", is not a valid number.")
             return
-        cursor = self.database.cursor()
-        cursor.execute("select null from weights where timestamp = ?",(timestamp,))
-        if cursor.fetchone() is not None:
-            answer = QW.QMessageBox.question(self,"Warning","There is already a weight for the given date.  Would you like to overwrite it?")
-            if answer == QW.QMessageBox.No:
-                cursor.close()
-                return
-            cursor.execute("update weights set weight = ? where timestamp = ?",(weight,timestamp))
-        else:
-            cursor.execute("insert into weights (timestamp,weight) values (?,?)",(timestamp,weight))
-        self.database.commit()
-        cursor.close()
+        with withinTransactionFor(self.database) as cursor:
+            cursor = self.database.cursor()
+            cursor.execute("select null from weights where timestamp = ?",(timestamp,))
+            if cursor.fetchone() is not None:
+                answer = QW.QMessageBox.question(self,"Warning","There is already a weight for the given date.  Would you like to overwrite it?")
+                if answer == QW.QMessageBox.No:
+                    return
+                cursor.execute("update weights set weight = ? where timestamp = ?",(weight,timestamp))
+            else:
+                cursor.execute("insert into weights (timestamp,weight) values (?,?)",(timestamp,weight))
         self.weight_field.setText("")
+
+class Cursor(sqlite3.Cursor):
+    def __init__(self,*args, **keywords):
+        sqlite3.Cursor(self)
+    def __enter__(self):
+        pass
+    def __exit__(self):
+        self.close()
 
 def doNew():
     openAndAddTab(QW.QFileDialog.getSaveFileName(main,"New File",documents_directory,"Databases (*.db)")[0])
