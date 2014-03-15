@@ -28,7 +28,7 @@ class EntryWidget(QW.QWidget):
         QW.QWidget.__init__(self)
         main_box = QW.QVBoxLayout()
         self.setLayout(main_box)
-        
+
         weight_panel = QW.QWidget()
         main_box.addWidget(weight_panel)
         weight_panel_box = QW.QHBoxLayout()
