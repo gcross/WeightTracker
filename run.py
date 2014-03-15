@@ -1,4 +1,3 @@
-from collections import namedtuple
 import os
 from os import path
 import sqlite3
@@ -87,119 +86,117 @@ class Cursor(sqlite3.Cursor):
     def __exit__(self):
         self.close()
 
-def doNew():
-    openAndAddTab(QW.QFileDialog.getSaveFileName(main,"New File",documents_directory,"Databases (*.db)")[0])
 
-def doOpen():
-    openAndAddTab(QW.QFileDialog.getOpenFileName(main,"Open File",documents_directory,"Databases (*.db)")[0])
+class Application(QW.QApplication):
+    def __init__(self,argv):
+        QW.QApplication.__init__(self,argv)
+        self.setApplicationName("WeightTracker")
+        self.setApplicationVersion("1.0")
 
-def doClose():
-    global entry_widgets
-    entry_panel = entry_widgets.currentWidget()
-    entry_panel.database.close()
-    entry_widgets.removeTab(entry_widgets.currentIndex())
-    saveTabs()
+        self.documents_directory = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DocumentsLocation)
 
-def doQuit():
-    app.exit()
+        self.main = QW.QMainWindow()
+        main_panel = QW.QWidget()
+        self.main.setCentralWidget(main_panel)
+        main_panel_box = QW.QVBoxLayout()
+        main_panel.setLayout(main_panel_box)
 
-def openAndAddTab(filename):
-    filename = filename.strip()
-    if len(filename) == 0:
-        return
-    global database, entry_widgets, main
-    for i in range(entry_widgets.count()):
-        if(entry_widgets.widget(i).filename == filename):
-            QW.QMessageBox.information(main,"Error","The file \"" + filename + "\" has already been opened.")
+        self.entry_widgets = QW.QTabWidget()
+        main_panel_box.addWidget(self.entry_widgets)
+
+        self.none_opened_label = QW.QLabel("Use the File menu to open a weight database.")
+        self.none_opened_label.setVisible(False)
+        main_panel_box.addWidget(self.none_opened_label)
+
+        view_buttons_panel = QW.QWidget()
+        main_panel_box.addWidget(view_buttons_panel)
+        view_buttons_panel_box = QW.QHBoxLayout()
+        view_buttons_panel.setLayout(view_buttons_panel_box)
+        self.list_view_button = QW.QPushButton("View/Edit as List")
+        self.list_view_button.clicked.connect(self.doList)
+        view_buttons_panel_box.addWidget(self.list_view_button)
+        self.graph_view_button = QW.QPushButton("View as Graph")
+        self.graph_view_button.clicked.connect(self.doGraph)
+        view_buttons_panel_box.addWidget(self.graph_view_button)
+
+    def exec_(self):
+        menu_bar = QW.QMenuBar(self.main)
+
+        file_menu = QW.QMenu("File")
+        for name in ["New","Open","Close","Quit"]:
+            if name:
+                action = QW.QAction(name,self.main)
+                action.setShortcut(QG.QKeySequence(getattr(QG.QKeySequence,name)))
+                action.triggered.connect(getattr(self,name))
+                file_menu.addAction(action)
+            else:
+                file_menu.addSeparator()
+        menu_bar.addMenu(file_menu)
+
+        directory_of_opened = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DataLocation)
+        if not path.exists(directory_of_opened):
+            os.makedirs(directory_of_opened)
+        self.path_to_opened = path.join(directory_of_opened,"opened.lst")
+
+        if path.exists(self.path_to_opened):
+            with open(self.path_to_opened,"rt") as f:
+                filenames_to_open = list(f)
+            for filename in filenames_to_open:
+                self.openAndAddTab(filename)
+
+        self.updateVisibility()
+
+        self.main.show()
+        QW.QApplication.exec_()
+
+    def New(self):
+        self.openAndAddTab(QW.QFileDialog.getSaveFileName(self.main,"New File",self.documents_directory,"Databases (*.db)")[0])
+
+    def Open(self):
+        self.openAndAddTab(QW.QFileDialog.getOpenFileName(self.main,"Open File",self.documents_directory,"Databases (*.db)")[0])
+
+    def Close(self):
+        entry_panel = self.entry_widgets.currentWidget()
+        entry_panel.database.close()
+        self.entry_widgets.removeTab(self.entry_widgets.currentIndex())
+        self.saveTabs()
+
+    def Quit(self):
+        self.exit()
+
+    def openAndAddTab(self,filename):
+        filename = filename.strip()
+        if len(filename) == 0:
             return
-    database = sqlite3.connect(filename)
-    database.execute("create table if not exists weights (timestamp integer, weight real)")
-    database.commit()
-    entry_widgets.addTab(EntryWidget(filename,database),path.splitext(path.split(filename)[1])[0])
-    saveTabs()
+        for i in range(self.entry_widgets.count()):
+            if(self.entry_widgets.widget(i).filename == filename):
+                QW.QMessageBox.information(self.main,"Error","The file \"" + filename + "\" has already been opened.")
+                return
+        database = sqlite3.connect(filename)
+        database.execute("create table if not exists weights (timestamp integer, weight real)")
+        database.commit()
+        self.entry_widgets.addTab(EntryWidget(filename,database),path.splitext(path.split(filename)[1])[0])
+        self.saveTabs()
 
-def doList():
-    pass
+    def doList(self):
+        pass
 
-def doGraph():
-    pass
+    def doGraph(self):
+        pass
 
-def saveTabs():
-    global entry_widgets, none_opened_label, path_to_opened
-    number_of_widgets = entry_widgets.count()
-    with open(path_to_opened + ".tmp","wt") as f:
-        filenames = [entry_widgets.widget(i).filename.strip() for i in range(number_of_widgets)]
-        f.write('\n'.join(filenames))
-    os.rename(path_to_opened + ".tmp",path_to_opened)
-    updateVisibility()
+    def saveTabs(self):
+        number_of_widgets = self.entry_widgets.count()
+        with open(self.path_to_opened + ".tmp","wt") as f:
+            filenames = [self.entry_widgets.widget(i).filename.strip() for i in range(number_of_widgets)]
+            f.write('\n'.join(filenames))
+        os.rename(self.path_to_opened + ".tmp",self.path_to_opened)
+        self.updateVisibility()
 
-def updateVisibility():
-    global entry_widgets, graph_view_button, list_view_button, none_opened_label
-    tab_present = entry_widgets.count() > 0
-    none_opened_label.setVisible(not tab_present)
-    list_view_button.setEnabled(tab_present)
-    graph_view_button.setEnabled(tab_present)
-
-def main():
-    global app, documents_directory, entry_widgets, graph_view_button, list_view_button, main, none_opened_label, path_to_opened
-    app = QW.QApplication(sys.argv)
-    app.setApplicationName("WeightTracker")
-    app.setApplicationVersion("1.0")
-
-    documents_directory = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DocumentsLocation)
-
-    main = QW.QMainWindow()
-    main_panel = QW.QWidget()
-    main.setCentralWidget(main_panel)
-    main_panel_box = QW.QVBoxLayout()
-    main_panel.setLayout(main_panel_box)
-
-    entry_widgets = QW.QTabWidget()
-    main_panel_box.addWidget(entry_widgets)
-
-    none_opened_label = QW.QLabel("Use the File menu to open a weight database.")
-    none_opened_label.setVisible(False)
-    main_panel_box.addWidget(none_opened_label)
-
-    view_buttons_panel = QW.QWidget()
-    main_panel_box.addWidget(view_buttons_panel)
-    view_buttons_panel_box = QW.QHBoxLayout()
-    view_buttons_panel.setLayout(view_buttons_panel_box)
-    list_view_button = QW.QPushButton("View/Edit as List")
-    list_view_button.clicked.connect(doList)
-    view_buttons_panel_box.addWidget(list_view_button)
-    graph_view_button = QW.QPushButton("View as Graph")
-    graph_view_button.clicked.connect(doGraph)
-    view_buttons_panel_box.addWidget(graph_view_button)
-
-    directory_of_opened = QC.QStandardPaths.writableLocation(QC.QStandardPaths.DataLocation)
-    if not path.exists(directory_of_opened):
-        os.makedirs(directory_of_opened)
-    path_to_opened = path.join(directory_of_opened,"opened.lst")
-
-    if path.exists(path_to_opened):
-        with open(path_to_opened,"rt") as f:
-            filenames_to_open = list(f)
-        for filename in filenames_to_open:
-            openAndAddTab(filename)
-
-    menu_bar = QW.QMenuBar(main)
-
-    file_menu = QW.QMenu("File")
-    for name in ["New","Open","Close","Quit"]:
-        if name:
-            action = QW.QAction(name,main)
-            action.setShortcut(QG.QKeySequence(getattr(QG.QKeySequence,name)))
-            action.triggered.connect(globals()["do" + name])
-            file_menu.addAction(action)
-        else:
-            file_menu.addSeparator()
-    menu_bar.addMenu(file_menu)
-
-    updateVisibility()
-
-    main.show()
-    app.exec_()
+    def updateVisibility(self):
+        tab_present = self.entry_widgets.count() > 0
+        self.none_opened_label.setVisible(not tab_present)
+        self.list_view_button.setEnabled(tab_present)
+        self.graph_view_button.setEnabled(tab_present)
 
 if __name__ == "__main__":
-    main()
+    Application(sys.argv).exec_()
