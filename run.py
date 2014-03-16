@@ -198,4 +198,5 @@ class Application(QW.QApplication):
         self.graph_view_button.setEnabled(tab_present)
 
 if __name__ == "__main__":
-    Application(sys.argv).exec_()
+    app = Application(sys.argv)
+    app.exec_()
