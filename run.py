@@ -18,6 +18,7 @@ for name in [
     "ComboBox",
     "DateTimeEdit",
     "FileDialog",
+    "GridLayout",
     "GroupBox",
     "HBoxLayout",
     "Label",
@@ -114,13 +115,11 @@ class DateRangeWidget(Widget):
 
         entry_controls = GroupBox("Date Range")
         box.addWidget(entry_controls)
-        entry_controls_box = VBoxLayout()
+        entry_controls_box = GridLayout()
         entry_controls.setLayout(entry_controls_box)
 
-        since_panel = Widget()
-        entry_controls_box.addWidget(since_panel)
         since_panel_box = HBoxLayout()
-        since_panel.setLayout(since_panel_box)
+        entry_controls_box.addLayout(since_panel_box,0,0)
         self.since_radio = RadioButton(entry_controls)
         since_panel_box.addWidget(self.since_radio)
         since_panel_box.addWidget(Label("Since"))
@@ -133,9 +132,8 @@ class DateRangeWidget(Widget):
         self.units_field.addItem("years")
         since_panel_box.addWidget(Label("ago"))
 
-        range_panel = Widget()
-        entry_controls_box.addWidget(range_panel)
         range_panel_box = HBoxLayout()
+        entry_controls_box.addLayout(range_panel_box,1,0)
         self.range_radio = RadioButton(entry_controls)
         range_panel_box.addWidget(self.range_radio)
         range_panel_box.addWidget(Label("From"))
