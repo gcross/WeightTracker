@@ -159,7 +159,7 @@ class Cursor(sqlite3.Cursor):
 class WeightTrackerApplication(Application):
     def __init__(self,argv):
         self.windows = []
-        
+
         Application.__init__(self,argv)
         self.setApplicationName("WeightTracker")
         self.setApplicationVersion("1.0")
@@ -253,15 +253,15 @@ class WeightTrackerApplication(Application):
         list_frame = MainWindow()
         list_frame_panel = Widget()
         list_frame.setCentralWidget(list_frame_panel)
-        
+
         list_frame_box = VBoxLayout()
         list_frame_panel.setLayout(list_frame_box)
-        
+
         date_range_widget = DateRangeWidget()
         list_frame_box.addWidget(date_range_widget)
 
         list_frame.show()
-        
+
         self.windows.append(list_frame)
 
     def doGraph(self):
