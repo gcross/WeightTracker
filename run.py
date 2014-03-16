@@ -3,26 +3,36 @@ from os import path
 import sqlite3
 import sys
 
-from PyQt5.QtCore import QDateTime as DateTime
-from PyQt5.QtCore import QStandardPaths as StandardPaths
+from PyQt5 import QtCore
+for name in ["DateTime","StandardPaths"]:
+    globals()[name] = getattr(QtCore,"Q" + name)
 
-from PyQt5.QtGui import QKeySequence as KeySequence
+from PyQt5 import QtGui
+for name in ["KeySequence"]:
+    globals()[name] = getattr(QtGui,"Q" + name)
 
-from PyQt5.QtWidgets import QAction as Action
-from PyQt5.QtWidgets import QApplication as Application
-from PyQt5.QtWidgets import QDateTimeEdit as DateTimeEdit
-from PyQt5.QtWidgets import QFileDialog as FileDialog
-from PyQt5.QtWidgets import QHBoxLayout as HBoxLayout
-from PyQt5.QtWidgets import QLabel as Label
-from PyQt5.QtWidgets import QLineEdit as LineEdit
-from PyQt5.QtWidgets import QMainWindow as MainWindow
-from PyQt5.QtWidgets import QMenu as Menu
-from PyQt5.QtWidgets import QMenuBar as MenuBar
-from PyQt5.QtWidgets import QMessageBox as MessageBox
-from PyQt5.QtWidgets import QPushButton as PushButton
-from PyQt5.QtWidgets import QTabWidget as TabWidget
-from PyQt5.QtWidgets import QVBoxLayout as VBoxLayout
-from PyQt5.QtWidgets import QWidget as Widget
+from PyQt5 import QtWidgets
+for name in [
+    "Action",
+    "Application",
+    "ComboBox",
+    "DateTimeEdit",
+    "FileDialog",
+    "GroupBox",
+    "HBoxLayout",
+    "Label",
+    "LineEdit",
+    "MainWindow",
+    "Menu",
+    "MenuBar",
+    "MessageBox",
+    "PushButton",
+    "RadioButton",
+    "TabWidget",
+    "VBoxLayout",
+    "Widget",
+  ]:
+    globals()[name] = getattr(QtWidgets,"Q" + name)
 
 def withinTransactionFor(database):
     class Transaction(sqlite3.Cursor):
