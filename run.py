@@ -86,7 +86,6 @@ class Cursor(sqlite3.Cursor):
     def __exit__(self):
         self.close()
 
-
 class Application(QW.QApplication):
     def __init__(self,argv):
         QW.QApplication.__init__(self,argv)
