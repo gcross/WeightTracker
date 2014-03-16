@@ -50,6 +50,7 @@ class EntryWidget(Widget):
     def __init__(self,filename,database):
         self.filename = filename
         self.database = database
+        self.windows = []
 
         Widget.__init__(self)
         main_box = VBoxLayout()
@@ -105,6 +106,48 @@ class EntryWidget(Widget):
     def setToNow(self):
         self.date_time_field.setDateTime(DateTime.currentDateTime())
 
+class DateRangeWidget(Widget):
+    def __init__(self):
+        Widget.__init__(self)
+        box = HBoxLayout()
+        self.setLayout(box)
+
+        entry_controls = GroupBox("Date Range")
+        box.addWidget(entry_controls)
+        entry_controls_box = VBoxLayout()
+        entry_controls.setLayout(entry_controls_box)
+
+        since_panel = Widget()
+        entry_controls_box.addWidget(since_panel)
+        since_panel_box = HBoxLayout()
+        since_panel.setLayout(since_panel_box)
+        self.since_radio = RadioButton(entry_controls)
+        since_panel_box.addWidget(self.since_radio)
+        since_panel_box.addWidget(Label("Since"))
+        self.duration_field = LineEdit()
+        since_panel_box.addWidget(self.duration_field)
+        self.units_field = ComboBox()
+        since_panel_box.addWidget(self.units_field)
+        self.units_field.addItem("days")
+        self.units_field.addItem("months")
+        self.units_field.addItem("years")
+        since_panel_box.addWidget(Label("ago"))
+
+        range_panel = Widget()
+        entry_controls_box.addWidget(range_panel)
+        range_panel_box = HBoxLayout()
+        self.range_radio = RadioButton(entry_controls)
+        range_panel_box.addWidget(self.range_radio)
+        range_panel_box.addWidget(Label("From"))
+        self.from_field = DateTimeEdit()
+        range_panel_box.addWidget(self.from_field)
+        range_panel_box.addWidget(Label("to"))
+        self.to_field = DateTimeEdit()
+        range_panel_box.addWidget(self.to_field)
+
+        apply_button = PushButton("Apply")
+        box.addWidget(apply_button)
+
 class Cursor(sqlite3.Cursor):
     def __init__(self,*args, **keywords):
         sqlite3.Cursor(self)
@@ -115,6 +158,8 @@ class Cursor(sqlite3.Cursor):
 
 class WeightTrackerApplication(Application):
     def __init__(self,argv):
+        self.windows = []
+        
         Application.__init__(self,argv)
         self.setApplicationName("WeightTracker")
         self.setApplicationVersion("1.0")
@@ -205,7 +250,19 @@ class WeightTrackerApplication(Application):
         self.saveTabs()
 
     def doList(self):
-        pass
+        list_frame = MainWindow()
+        list_frame_panel = Widget()
+        list_frame.setCentralWidget(list_frame_panel)
+        
+        list_frame_box = VBoxLayout()
+        list_frame_panel.setLayout(list_frame_box)
+        
+        date_range_widget = DateRangeWidget()
+        list_frame_box.addWidget(date_range_widget)
+
+        list_frame.show()
+        
+        self.windows.append(list_frame)
 
     def doGraph(self):
         pass
