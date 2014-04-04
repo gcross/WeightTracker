@@ -1,6 +1,8 @@
 #ifndef ENTRYWIDGET_H
 #define ENTRYWIDGET_H
 
+#include <memory>
+
 #include <QDateTime>
 #include <QDateTimeEdit>
 #include <QLineEdit>
@@ -16,13 +18,14 @@ class EntryWidget : public QWidget
     QLineEdit *weight_field;
     QDateTimeEdit *date_time_field;
 
-    sqlite3 *database;
+    std::shared_ptr<sqlite3> database;
+    std::shared_ptr<sqlite3_stmt> insert_statement;
 
+    void saveAndClear();
     void setToNow();
 
 public:
     explicit EntryWidget(const QString &filename, QWidget *parent = 0);
-    ~EntryWidget();
 
     const QString filename, name;
 };

@@ -1,5 +1,14 @@
 #include <utils.h>
 
+#include <sqlite3.h>
+
+void doOrThrow(const int status, const int ok) {
+    if(status != ok)
+    {
+        throw std::runtime_error(std::string(sqlite3_errstr(status)));
+    }
+}
+
 QDateTime nowWithoutSeconds()
 {
     QDateTime now(QDateTime::currentDateTime());

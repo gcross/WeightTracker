@@ -89,12 +89,7 @@ void MainWindow::openAndAddTab(const QString &filename)
     for(int i = 0; i < entry_widgets->count(); ++i)
     {
         if(static_cast<EntryWidget*>(entry_widgets->widget(i))->filename == filename) {
-            QString message(tr("The file "));
-            message += QString(QChar('='));
-            message += filename;
-            message += QString(QChar('"'));
-            message += tr(" has already been opened");
-            QMessageBox::information(this,tr("Error"),message);
+            QMessageBox::information(this,tr("Error"),tr("The file \"%1\" has already been opened.").arg(filename));
             return;
         }
     }
