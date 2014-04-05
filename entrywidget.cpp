@@ -8,7 +8,13 @@
 #include <QMessageBox>
 #include <QPushButton>
 
+#include <map>
+
 #include "sqlite3.h"
+
+using std::map;
+using std::shared_ptr;
+using std::weak_ptr;
 
 EntryWidget::EntryWidget(const QString &filename, QWidget *parent) :
     QWidget(parent),
@@ -18,9 +24,19 @@ EntryWidget::EntryWidget(const QString &filename, QWidget *parent) :
     name(QFileInfo(filename).baseName())
 {
     {
-        sqlite3 *_database;
-        doOrThrow(sqlite3_open(filename.toUtf8().data(),&_database));
-        database.reset(_database,sqlite3_close);
+        static map<QString,weak_ptr<sqlite3>> connections;
+        weak_ptr<sqlite3> &_database = connections[filename];
+        if(_database.expired())
+        {
+            sqlite3 *db;
+            doOrThrow(sqlite3_open(filename.toUtf8().data(),&db));
+            database.reset(db,sqlite3_close);
+            _database = database;
+        }
+        else
+        {
+            database = _database.lock();
+        }
     }
 
    {
